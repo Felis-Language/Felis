@@ -1,0 +1,89 @@
+library StringUtils
+
+export starts_with, ends_with, substring, to_upper, to_lower, _return
+
+define starts_with(str: string, prefix: string) {
+    if length(str) < length(prefix) {
+        return false
+    }
+    var i = 1
+    repeat length(prefix) {
+        if not (letter(i, str) == letter(i, prefix)) {
+            return false
+        }
+        change i by 1
+    }
+    return true
+}
+
+define ends_with(str: string, suffix: string) {
+    if length(str) < length(suffix) {
+        return false
+    }
+    var offset = length(str) - length(suffix)
+    var i = 1
+    repeat length(suffix) {
+        if not (letter(offset + i, str) == letter(i, suffix)) {
+            return false
+        }
+        change i by 1
+    }
+    return true
+}
+
+define substring(str: string, start: number, len: number) {
+    var result = ""
+    var i = 0
+    repeat len {
+        set result = join(result, letter(start + i, str))
+        change i by 1
+    }
+    return result
+}
+
+var _lower_chars = "abcdefghijklmnopqrstuvwxyz"
+var _upper_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+define to_upper(str: string) {
+    var result = ""
+    var i = 1
+    repeat length(str) {
+        var char = letter(i, str)
+        var j = 1
+        var found = false
+        repeat 26 {
+            if char == letter(j, _lower_chars) {
+                set result = join(result, letter(j, _upper_chars))
+                set found = true
+            }
+            change j by 1
+        }
+        if not found {
+            set result = join(result, char)
+        }
+        change i by 1
+    }
+    return result
+}
+
+define to_lower(str: string) {
+    var result = ""
+    var i = 1
+    repeat length(str) {
+        var char = letter(i, str)
+        var j = 1
+        var found = false
+        repeat 26 {
+            if char == letter(j, _upper_chars) {
+                set result = join(result, letter(j, _lower_chars))
+                set found = true
+            }
+            change j by 1
+        }
+        if not found {
+            set result = join(result, char)
+        }
+        change i by 1
+    }
+    return result
+}

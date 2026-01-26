@@ -1,0 +1,21 @@
+library RandomUtils
+
+export random_bool, random_color, choice, _return
+
+define random_bool() {
+    if random(0, 1) == 1 {
+        return true
+    } else {
+        return false
+    }
+}
+
+define random_color() {
+    return random(0, 16777215)
+}
+
+# Choice requires list input, using _input_list convention from ListUtils
+define choice() {
+    var idx = random(1, length(_input_list))
+    return item(idx, _input_list)
+}

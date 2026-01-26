@@ -1,0 +1,7 @@
+library SDKAnim
+
+export anim_clear_frames, anim_add_frame, anim_start, anim_stop, anim_tick
+export anim_set_index, anim_set_fps
+
+// SDK moved to felis/libs/sdk_anim.felis
+// This placeholder remains for compatibility; use felis/libs for actual SDK sources.

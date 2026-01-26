@@ -1,0 +1,4 @@
+library Music
+
+# This library enables the Music extension.
+# The blocks are built-in to the language parser/compiler.

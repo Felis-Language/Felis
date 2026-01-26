@@ -1,0 +1,37 @@
+library PenUtils
+
+export draw_rect, draw_circle, draw_line
+
+define draw_rect(x: number, y: number, w: number, h: number) {
+    pen_up()
+    goto x, y
+    pen_down()
+    goto x + w, y
+    goto x + w, y + h
+    goto x, y + h
+    goto x, y
+    pen_up()
+}
+
+define draw_line(x1: number, y1: number, x2: number, y2: number) {
+    pen_up()
+    goto x1, y1
+    pen_down()
+    goto x2, y2
+    pen_up()
+}
+
+define draw_circle(x: number, y: number, r: number) {
+    # Simple approximation
+    pen_up()
+    goto x + r, y
+    pen_down()
+    var i = 0
+    repeat 36 {
+        change i by 10
+        goto x + cos(i) * r, y + sin(i) * r
+    }
+    pen_up()
+}
+
+

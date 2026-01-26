@@ -1,0 +1,834 @@
+# Felis Pen Text Engine
+# A comprehensive text rendering system using pen graphics
+#
+# Features:
+# - Multiple font sizes
+# - Font styles (normal, bold, narrow)
+# - Text color with transparency
+# - Alignment (left, center, right)
+# - Line wrapping at specified width
+# - Line breaks (\n or |)
+# - Text effects (shadow, outline, wave, rainbow, typewriter, shake)
+
+library text
+
+import "pen"
+import "math"
+
+export text_init, text_draw, text_draw_wrap
+export text_set_size, text_set_color, text_set_font, text_set_align
+export text_set_effect, text_clear_effect
+export text_set_line_height, text_set_letter_spacing
+export text_measure, text_measure_height
+export text_draw_char, text_typewriter, text_typewriter_tick
+export TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, TEXT_ALIGN_RIGHT
+export TEXT_FONT_NORMAL, TEXT_FONT_BOLD, TEXT_FONT_NARROW, TEXT_FONT_SCRIPT
+export TEXT_EFFECT_NONE, TEXT_EFFECT_SHADOW, TEXT_EFFECT_OUTLINE
+export TEXT_EFFECT_WAVE, TEXT_EFFECT_RAINBOW, TEXT_EFFECT_SHAKE
+
+# ============================================================================
+# CONSTANTS
+# ============================================================================
+
+var TEXT_ALIGN_LEFT = 0
+var TEXT_ALIGN_CENTER = 1
+var TEXT_ALIGN_RIGHT = 2
+
+var TEXT_FONT_NORMAL = 0
+var TEXT_FONT_BOLD = 1
+var TEXT_FONT_NARROW = 2
+var TEXT_FONT_SCRIPT = 3
+
+var TEXT_EFFECT_NONE = 0
+var TEXT_EFFECT_SHADOW = 1
+var TEXT_EFFECT_OUTLINE = 2
+var TEXT_EFFECT_WAVE = 3
+var TEXT_EFFECT_RAINBOW = 4
+var TEXT_EFFECT_SHAKE = 5
+
+# ============================================================================
+# STATE VARIABLES
+# ============================================================================
+
+var _text_size = 8
+var _text_color = "#000000"
+var _text_font = 0
+var _text_align = 0
+var _text_effect = 0
+var _text_line_height = 1.2
+var _text_letter_spacing = 1
+var _text_shadow_color = "#333333"
+var _text_shadow_offset_x = 2
+var _text_shadow_offset_y = -2
+var _text_outline_color = "#000000"
+var _text_wave_amplitude = 3
+var _text_wave_frequency = 0.3
+var _text_effect_timer = 0
+
+# Typewriter state
+var _tw_text = ""
+var _tw_x = 0
+var _tw_y = 0
+var _tw_index = 0
+var _tw_speed = 0.05
+var _tw_active = 0
+
+# Character set for indexing
+var _charset = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+# ============================================================================
+# FONT DATA - 5x7 bitmap font stored as binary strings
+# Each character is 5 columns, 7 rows, stored column by column
+# ============================================================================
+
+list _font_data = []
+
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
+
+define text_init() {
+    # Initialize font data - 5x7 pixel font
+    # Format: 7 rows per character, each row is 5 bits (as decimal)
+    
+    delete all of _font_data
+    
+    # Space (32)
+    add "0,0,0,0,0,0,0" to _font_data
+    # ! (33)
+    add "0,0,95,0,0,0,0" to _font_data
+    # " (34)
+    add "0,7,0,7,0,0,0" to _font_data
+    # # (35)
+    add "20,127,20,127,20,0,0" to _font_data
+    # $ (36)
+    add "36,42,127,42,18,0,0" to _font_data
+    # % (37)
+    add "35,19,8,100,98,0,0" to _font_data
+    # & (38)
+    add "54,73,85,34,80,0,0" to _font_data
+    # ' (39)
+    add "0,5,3,0,0,0,0" to _font_data
+    # ( (40)
+    add "0,28,34,65,0,0,0" to _font_data
+    # ) (41)
+    add "0,65,34,28,0,0,0" to _font_data
+    # * (42)
+    add "20,8,62,8,20,0,0" to _font_data
+    # + (43)
+    add "8,8,62,8,8,0,0" to _font_data
+    # , (44)
+    add "0,80,48,0,0,0,0" to _font_data
+    # - (45)
+    add "8,8,8,8,8,0,0" to _font_data
+    # . (46)
+    add "0,96,96,0,0,0,0" to _font_data
+    # / (47)
+    add "32,16,8,4,2,0,0" to _font_data
+    # 0 (48)
+    add "62,81,73,69,62,0,0" to _font_data
+    # 1 (49)
+    add "0,66,127,64,0,0,0" to _font_data
+    # 2 (50)
+    add "66,97,81,73,70,0,0" to _font_data
+    # 3 (51)
+    add "33,65,69,75,49,0,0" to _font_data
+    # 4 (52)
+    add "24,20,18,127,16,0,0" to _font_data
+    # 5 (53)
+    add "39,69,69,69,57,0,0" to _font_data
+    # 6 (54)
+    add "60,74,73,73,48,0,0" to _font_data
+    # 7 (55)
+    add "1,113,9,5,3,0,0" to _font_data
+    # 8 (56)
+    add "54,73,73,73,54,0,0" to _font_data
+    # 9 (57)
+    add "6,73,73,41,30,0,0" to _font_data
+    # : (58)
+    add "0,54,54,0,0,0,0" to _font_data
+    # ; (59)
+    add "0,86,54,0,0,0,0" to _font_data
+    # < (60)
+    add "8,20,34,65,0,0,0" to _font_data
+    # = (61)
+    add "20,20,20,20,20,0,0" to _font_data
+    # > (62)
+    add "0,65,34,20,8,0,0" to _font_data
+    # ? (63)
+    add "2,1,81,9,6,0,0" to _font_data
+    # @ (64)
+    add "50,73,121,65,62,0,0" to _font_data
+    # A (65)
+    add "126,17,17,17,126,0,0" to _font_data
+    # B (66)
+    add "127,73,73,73,54,0,0" to _font_data
+    # C (67)
+    add "62,65,65,65,34,0,0" to _font_data
+    # D (68)
+    add "127,65,65,34,28,0,0" to _font_data
+    # E (69)
+    add "127,73,73,73,65,0,0" to _font_data
+    # F (70)
+    add "127,9,9,9,1,0,0" to _font_data
+    # G (71)
+    add "62,65,73,73,122,0,0" to _font_data
+    # H (72)
+    add "127,8,8,8,127,0,0" to _font_data
+    # I (73)
+    add "0,65,127,65,0,0,0" to _font_data
+    # J (74)
+    add "32,64,65,63,1,0,0" to _font_data
+    # K (75)
+    add "127,8,20,34,65,0,0" to _font_data
+    # L (76)
+    add "127,64,64,64,64,0,0" to _font_data
+    # M (77)
+    add "127,2,12,2,127,0,0" to _font_data
+    # N (78)
+    add "127,4,8,16,127,0,0" to _font_data
+    # O (79)
+    add "62,65,65,65,62,0,0" to _font_data
+    # P (80)
+    add "127,9,9,9,6,0,0" to _font_data
+    # Q (81)
+    add "62,65,81,33,94,0,0" to _font_data
+    # R (82)
+    add "127,9,25,41,70,0,0" to _font_data
+    # S (83)
+    add "70,73,73,73,49,0,0" to _font_data
+    # T (84)
+    add "1,1,127,1,1,0,0" to _font_data
+    # U (85)
+    add "63,64,64,64,63,0,0" to _font_data
+    # V (86)
+    add "31,32,64,32,31,0,0" to _font_data
+    # W (87)
+    add "63,64,56,64,63,0,0" to _font_data
+    # X (88)
+    add "99,20,8,20,99,0,0" to _font_data
+    # Y (89)
+    add "7,8,112,8,7,0,0" to _font_data
+    # Z (90)
+    add "97,81,73,69,67,0,0" to _font_data
+    # [ (91)
+    add "0,127,65,65,0,0,0" to _font_data
+    # \ (92)
+    add "2,4,8,16,32,0,0" to _font_data
+    # ] (93)
+    add "0,65,65,127,0,0,0" to _font_data
+    # ^ (94)
+    add "4,2,1,2,4,0,0" to _font_data
+    # _ (95)
+    add "64,64,64,64,64,0,0" to _font_data
+    # ` (96)
+    add "0,1,2,4,0,0,0" to _font_data
+    # a (97)
+    add "32,84,84,84,120,0,0" to _font_data
+    # b (98)
+    add "127,68,68,68,56,0,0" to _font_data
+    # c (99)
+    add "56,68,68,68,32,0,0" to _font_data
+    # d (100)
+    add "56,68,68,68,127,0,0" to _font_data
+    # e (101)
+    add "56,84,84,84,24,0,0" to _font_data
+    # f (102)
+    add "8,126,9,1,2,0,0" to _font_data
+    # g (103)
+    add "8,84,84,84,60,0,0" to _font_data
+    # h (104)
+    add "127,8,4,4,120,0,0" to _font_data
+    # i (105)
+    add "0,68,125,64,0,0,0" to _font_data
+    # j (106)
+    add "32,64,68,61,0,0,0" to _font_data
+    # k (107)
+    add "127,16,40,68,0,0,0" to _font_data
+    # l (108)
+    add "0,65,127,64,0,0,0" to _font_data
+    # m (109)
+    add "124,4,24,4,120,0,0" to _font_data
+    # n (110)
+    add "124,8,4,4,120,0,0" to _font_data
+    # o (111)
+    add "56,68,68,68,56,0,0" to _font_data
+    # p (112)
+    add "124,20,20,20,8,0,0" to _font_data
+    # q (113)
+    add "8,20,20,20,124,0,0" to _font_data
+    # r (114)
+    add "124,8,4,4,8,0,0" to _font_data
+    # s (115)
+    add "72,84,84,84,36,0,0" to _font_data
+    # t (116)
+    add "4,63,68,64,32,0,0" to _font_data
+    # u (117)
+    add "60,64,64,32,124,0,0" to _font_data
+    # v (118)
+    add "28,32,64,32,28,0,0" to _font_data
+    # w (119)
+    add "60,64,48,64,60,0,0" to _font_data
+    # x (120)
+    add "68,40,16,40,68,0,0" to _font_data
+    # y (121)
+    add "12,80,80,80,60,0,0" to _font_data
+    # z (122)
+    add "68,100,84,76,68,0,0" to _font_data
+    # { (123)
+    add "0,8,54,65,0,0,0" to _font_data
+    # | (124)
+    add "0,0,127,0,0,0,0" to _font_data
+    # } (125)
+    add "0,65,54,8,0,0,0" to _font_data
+    # ~ (126)
+    add "16,8,8,16,8,0,0" to _font_data
+    
+    # Reset state
+    set _text_size = 8
+    set _text_color = "#000000"
+    set _text_font = 0
+    set _text_align = 0
+    set _text_effect = 0
+    set _text_line_height = 1.2
+    set _text_letter_spacing = 1
+    set _text_effect_timer = 0
+}
+
+# ============================================================================
+# CONFIGURATION FUNCTIONS
+# ============================================================================
+
+define text_set_size(size: number) {
+    set _text_size = size
+}
+
+define text_set_color(color: string) {
+    set _text_color = color
+}
+
+define text_set_font(font: number) {
+    set _text_font = font
+}
+
+define text_set_align(align_val: number) {
+    set _text_align = align_val
+}
+
+define text_set_effect(eff: number) {
+    set _text_effect = eff
+}
+
+define text_clear_effect() {
+    set _text_effect = 0
+}
+
+define text_set_line_height(height: number) {
+    set _text_line_height = height
+}
+
+define text_set_letter_spacing(spacing: number) {
+    set _text_letter_spacing = spacing
+}
+
+define text_set_shadow(color: string, offset_x: number, offset_y: number) {
+    set _text_shadow_color = color
+    set _text_shadow_offset_x = offset_x
+    set _text_shadow_offset_y = offset_y
+}
+
+define text_set_outline_color(color: string) {
+    set _text_outline_color = color
+}
+
+define text_set_wave(amplitude: number, frequency: number) {
+    set _text_wave_amplitude = amplitude
+    set _text_wave_frequency = frequency
+}
+
+# ============================================================================
+# MEASUREMENT FUNCTIONS
+# ============================================================================
+
+define text_measure(text: string) {
+    # Returns width of text in pixels
+    var char_width = 5
+    var scale = _text_size / 7
+    
+    if _text_font == 1 {
+        # Bold font is slightly wider
+        set char_width = 6
+    }
+    if _text_font == 2 {
+        # Narrow font
+        set char_width = 4
+    }
+    
+    var width = length(text) * (char_width + _text_letter_spacing) * scale
+    return width
+}
+
+define text_measure_height(text: string, max_width: number) {
+    # Returns height needed for wrapped text
+    var scale = _text_size / 7
+    var line_h = 7 * scale * _text_line_height
+    var lines = 1
+    var current_width = 0
+    var char_width = (5 + _text_letter_spacing) * scale
+    
+    var i = 1
+    while i <= length(text) {
+        var ch = letter(i, text)
+        if ch == "|" {
+            set lines = lines + 1
+            set current_width = 0
+        } else {
+            set current_width = current_width + char_width
+            if current_width > max_width {
+                if max_width > 0 {
+                    set lines = lines + 1
+                    set current_width = char_width
+                }
+            }
+        }
+        change i by 1
+    }
+    
+    return lines * line_h
+}
+
+# ============================================================================
+# INTERNAL DRAWING HELPERS
+# ============================================================================
+
+define warp _get_char_index(ch: string) {
+    var idx = 1
+    repeat length(_charset) {
+        if letter(idx, _charset) == ch {
+            return idx
+        }
+        change idx by 1
+    }
+    return 1  # Default to space
+}
+
+define warp _draw_pixel(px: number, py: number, size: number) {
+    pen_up()
+    goto px, py
+    pen_down()
+    goto px + size, py
+    pen_up()
+}
+
+define warp _parse_font_row(data: string, col: number) {
+    # Parse comma-separated font data and get column value
+    var val = 0
+    var current = 0
+    var idx = 1
+    var num_str = ""
+    
+    repeat length(data) + 1 {
+        var ch = letter(idx, data)
+        if ch == "," or idx > length(data) {
+            set current = current + 1
+            if current == col {
+                set val = num_str
+                return val
+            }
+            set num_str = ""
+        } else {
+            set num_str = join(num_str, ch)
+        }
+        change idx by 1
+    }
+    
+    return val
+}
+
+define warp _draw_char_at(ch: string, px: number, py: number, scale: number, color: string) {
+    var char_idx = _get_char_index(ch)
+    
+    if char_idx < 1 or char_idx > length(_font_data) {
+        return 0
+    }
+    
+    var font_row = item(char_idx, _font_data)
+    var pixel_size = scale
+    
+    set_pen_color(color)
+    set_pen_size(pixel_size)
+    
+    # Draw 5 columns, 7 rows
+    var col = 1
+    repeat 5 {
+        var col_data = _parse_font_row(font_row, col)
+        
+        # Check each bit in the column (7 bits)
+        var row = 0
+        var bit_val = col_data
+        repeat 7 {
+            if bit_val mod 2 == 1 {
+                var draw_x = px + (col - 1) * pixel_size
+                var draw_y = py - row * pixel_size
+                _draw_pixel(draw_x, draw_y, pixel_size * 0.9)
+            }
+            set bit_val = floor(bit_val / 2)
+            change row by 1
+        }
+        change col by 1
+    }
+    
+    return 5 * scale
+}
+
+# ============================================================================
+# EFFECT RENDERING
+# ============================================================================
+
+define warp _apply_effect_offset(char_index: number) {
+    # Returns y offset for wave effect
+    if _text_effect == 3 {
+        # Wave effect
+        var wave_y = sin(char_index * _text_wave_frequency * 360 + _text_effect_timer * 5) * _text_wave_amplitude
+        return wave_y
+    }
+    if _text_effect == 5 {
+        # Shake effect
+        var shake_x = (random(0, 100) / 100 - 0.5) * 2
+        var shake_y = (random(0, 100) / 100 - 0.5) * 2
+        return shake_y
+    }
+    return 0
+}
+
+define warp _get_rainbow_color(idx: number) {
+    # Generate rainbow color based on character index
+    var hue = (idx * 30 + _text_effect_timer * 3) mod 360
+    
+    # Simple HSV to RGB (saturation=1, value=1)
+    var h = hue / 60
+    var i = floor(h)
+    var f = h - i
+    var q = 1 - f
+    
+    var r = 0
+    var g = 0
+    var b = 0
+    
+    if i == 0 {
+        set r = 255
+        set g = floor(f * 255)
+        set b = 0
+    }
+    if i == 1 {
+        set r = floor(q * 255)
+        set g = 255
+        set b = 0
+    }
+    if i == 2 {
+        set r = 0
+        set g = 255
+        set b = floor(f * 255)
+    }
+    if i == 3 {
+        set r = 0
+        set g = floor(q * 255)
+        set b = 255
+    }
+    if i == 4 {
+        set r = floor(f * 255)
+        set g = 0
+        set b = 255
+    }
+    if i == 5 {
+        set r = 255
+        set g = 0
+        set b = floor(q * 255)
+    }
+    
+    # Convert to hex - simplified
+    return join("#", join(r, join(g, b)))
+}
+
+# ============================================================================
+# MAIN DRAWING FUNCTIONS
+# ============================================================================
+
+define text_draw_char(ch: string, px: number, py: number) {
+    # Draw a single character at position
+    var scale = _text_size / 7
+    _draw_char_at(ch, px, py, scale, _text_color)
+}
+
+define warp text_draw(text: string, start_x: number, start_y: number) {
+    # Draw text at position with current settings
+    var scale = _text_size / 7
+    var char_width = 5 * scale
+    var spacing = _text_letter_spacing * scale
+    var total_width = text_measure(text)
+    
+    # Calculate starting X based on alignment
+    var draw_x = start_x
+    if _text_align == 1 {
+        # Center
+        set draw_x = start_x - total_width / 2
+    }
+    if _text_align == 2 {
+        # Right
+        set draw_x = start_x - total_width
+    }
+    
+    var draw_y = start_y
+    var char_idx = 1
+    
+    # Draw shadow first if enabled
+    if _text_effect == 1 {
+        var shadow_x = draw_x + _text_shadow_offset_x
+        var shadow_y = draw_y + _text_shadow_offset_y
+        var si = 1
+        repeat length(text) {
+            var ch = letter(si, text)
+            if ch != "|" {
+                _draw_char_at(ch, shadow_x, shadow_y, scale, _text_shadow_color)
+                set shadow_x = shadow_x + char_width + spacing
+            }
+            change si by 1
+        }
+    }
+    
+    # Draw outline if enabled
+    if _text_effect == 2 {
+        var offsets_x = "-1,1,-1,1,0,0,-1,1"
+        var offsets_y = "-1,-1,1,1,-1,1,0,0"
+        var oi = 1
+        repeat 8 {
+            var ox = _parse_font_row(offsets_x, oi) * scale
+            var oy = _parse_font_row(offsets_y, oi) * scale
+            var outline_x = draw_x + ox
+            var si = 1
+            repeat length(text) {
+                var ch = letter(si, text)
+                if ch != "|" {
+                    _draw_char_at(ch, outline_x + ox, draw_y + oy, scale, _text_outline_color)
+                    set outline_x = outline_x + char_width + spacing
+                }
+                change si by 1
+            }
+            change oi by 1
+        }
+    }
+    
+    # Draw main text
+    var i = 1
+    repeat length(text) {
+        var ch = letter(i, text)
+        
+        if ch == "|" {
+            # Line break
+            set draw_x = start_x
+            if _text_align == 1 {
+                set draw_x = start_x - total_width / 2
+            }
+            if _text_align == 2 {
+                set draw_x = start_x - total_width
+            }
+            set draw_y = draw_y - 7 * scale * _text_line_height
+        } else {
+            var effect_y = _apply_effect_offset(char_idx)
+            var color = _text_color
+            
+            if _text_effect == 4 {
+                # Rainbow effect
+                set color = _get_rainbow_color(char_idx)
+            }
+            
+            _draw_char_at(ch, draw_x, draw_y + effect_y, scale, color)
+            set draw_x = draw_x + char_width + spacing
+            change char_idx by 1
+        }
+        
+        change i by 1
+    }
+    
+    # Increment effect timer
+    change _text_effect_timer by 1
+}
+
+define warp text_draw_wrap(text: string, start_x: number, start_y: number, max_width: number) {
+    # Draw text with word wrapping
+    var scale = _text_size / 7
+    var char_width = 5 * scale
+    var spacing = _text_letter_spacing * scale
+    var line_h = 7 * scale * _text_line_height
+    
+    var draw_x = start_x
+    var draw_y = start_y
+    var line_start_x = start_x
+    var current_line_width = 0
+    var char_idx = 1
+    
+    # Word buffer for wrapping
+    var word = ""
+    var word_width = 0
+    
+    var i = 1
+    while i <= length(text) {
+        var ch = letter(i, text)
+        
+        if ch == "|" {
+            # Explicit line break - draw current word first
+            if length(word) > 0 {
+                _draw_word(word, draw_x, draw_y, scale, char_idx)
+                set char_idx = char_idx + length(word)
+            }
+            set word = ""
+            set word_width = 0
+            set draw_x = line_start_x
+            set draw_y = draw_y - line_h
+            set current_line_width = 0
+        } elif ch == " " {
+            # Space - draw current word and add space
+            if length(word) > 0 {
+                # Check if word fits on current line
+                if current_line_width + word_width > max_width {
+                    if current_line_width > 0 {
+                        # Wrap to next line
+                        set draw_x = line_start_x
+                        set draw_y = draw_y - line_h
+                        set current_line_width = 0
+                    }
+                }
+                _draw_word(word, draw_x, draw_y, scale, char_idx)
+                set draw_x = draw_x + word_width
+                set current_line_width = current_line_width + word_width
+                set char_idx = char_idx + length(word)
+            }
+            # Add space
+            set draw_x = draw_x + char_width + spacing
+            set current_line_width = current_line_width + char_width + spacing
+            set word = ""
+            set word_width = 0
+        } else {
+            # Add to current word
+            set word = join(word, ch)
+            set word_width = word_width + char_width + spacing
+        }
+        
+        change i by 1
+    }
+    
+    # Draw remaining word
+    if length(word) > 0 {
+        if current_line_width + word_width > max_width {
+            if current_line_width > 0 {
+                set draw_x = line_start_x
+                set draw_y = draw_y - line_h
+            }
+        }
+        _draw_word(word, draw_x, draw_y, scale, char_idx)
+    }
+}
+
+define warp _draw_word(word: string, wx: number, wy: number, scale: number, start_idx: number) {
+    var char_width = 5 * scale
+    var spacing = _text_letter_spacing * scale
+    var dx = wx
+    var char_idx = start_idx
+    
+    var i = 1
+    repeat length(word) {
+        var ch = letter(i, word)
+        var effect_y = _apply_effect_offset(char_idx)
+        var color = _text_color
+        
+        if _text_effect == 4 {
+            set color = _get_rainbow_color(char_idx)
+        }
+        
+        _draw_char_at(ch, dx, wy + effect_y, scale, color)
+        set dx = dx + char_width + spacing
+        change char_idx by 1
+        change i by 1
+    }
+}
+
+# ============================================================================
+# TYPEWRITER EFFECT
+# ============================================================================
+
+define text_typewriter(text: string, tx: number, ty: number, speed: number) {
+    # Start typewriter effect
+    set _tw_text = text
+    set _tw_x = tx
+    set _tw_y = ty
+    set _tw_index = 0
+    set _tw_speed = speed
+    set _tw_active = 1
+}
+
+define text_typewriter_tick() {
+    # Call this in a loop to animate typewriter
+    # Returns 1 if still animating, 0 if done
+    
+    if _tw_active == 0 {
+        return 0
+    }
+    
+    change _tw_index by 1
+    
+    if _tw_index > length(_tw_text) {
+        set _tw_active = 0
+        return 0
+    }
+    
+    # Draw text up to current index
+    var partial = ""
+    var i = 1
+    repeat _tw_index {
+        set partial = join(partial, letter(i, _tw_text))
+        change i by 1
+    }
+    
+    text_draw(partial, _tw_x, _tw_y)
+    
+    return 1
+}
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+define text_update_effects() {
+    # Call this each frame to update animated effects
+    change _text_effect_timer by 1
+}
+
+define warp text_draw_box(text: string, bx: number, by: number, padding: number, bg_color: string) {
+    # Draw text with a background box
+    var scale = _text_size / 7
+    var text_w = text_measure(text)
+    var text_h = 7 * scale
+    
+    # Draw background
+    var box_x = bx - padding
+    var box_y = by + padding
+    var box_w = text_w + padding * 2
+    var box_h = text_h + padding * 2
+    
+    set_pen_color(bg_color)
+    set_pen_size(1)
+    
+    # Fill rectangle
+    var row = 0
+    repeat box_h {
+        pen_up()
+        goto box_x, box_y - row
+        pen_down()
+        goto box_x + box_w, box_y - row
+        change row by 1
+    }
+    pen_up()
+    
+    # Draw text
+    text_draw(text, bx, by)
+}

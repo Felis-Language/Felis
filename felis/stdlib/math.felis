@@ -1,0 +1,60 @@
+library Math
+
+export min, max, clamp, pow, random_float, map, sign, radians, degrees, _return
+
+define min(a: number, b: number) {
+    if a < b {
+        return a
+    } else {
+        return b
+    }
+}
+
+define max(a: number, b: number) {
+    if a > b {
+        return a
+    } else {
+        return b
+    }
+}
+
+define clamp(val: number, min_val: number, max_val: number) {
+    if val < min_val {
+        return min_val
+    } elif val > max_val {
+        return max_val
+    } else {
+        return val
+    }
+}
+
+define pow(base: number, exp: number) {
+    # base^exp = e^(ln(base) * exp)
+    return antiln(ln(base) * exp)
+}
+
+define sign(val: number) {
+    if val > 0 {
+        return 1
+    } elif val < 0 {
+        return -1
+    } else {
+        return 0
+    }
+}
+
+define radians(deg: number) {
+    return deg * 0.0174532925
+}
+
+define degrees(rad: number) {
+    return rad * 57.2957795
+}
+
+define random_float(min_val: number, max_val: number) {
+    return random(min_val, max_val)
+}
+
+define map(val: number, in_min: number, in_max: number, out_min: number, out_max: number) {
+    return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+}

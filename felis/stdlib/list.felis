@@ -1,0 +1,44 @@
+library ListUtils
+
+export reverse_list, copy_list, fill_list, join_list, _return, _input_list, _output_list
+
+list _input_list = []
+list _output_list = []
+
+define warp join_list(separator: string) {
+    var result = ""
+    var i = 1
+    repeat length(_input_list) {
+        if i > 1 {
+            set result = join(result, separator)
+        }
+        set result = join(result, item(i, _input_list))
+        change i by 1
+    }
+    return result
+}
+
+define warp reverse_list() {
+    delete all from _output_list
+    var i = length(_input_list)
+    repeat length(_input_list) {
+        add item(i, _input_list) to _output_list
+        change i by -1
+    }
+}
+
+define warp copy_list() {
+    delete all from _output_list
+    var i = 1
+    repeat length(_input_list) {
+        add item(i, _input_list) to _output_list
+        change i by 1
+    }
+}
+
+define warp fill_list(count: number, value: string) {
+    delete all from _output_list
+    repeat count {
+        add value to _output_list
+    }
+}

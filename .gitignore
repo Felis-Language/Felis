@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+.DS_Store
+
+# Test / coverage
+.pytest_cache/
+.coverage
+
+# Python cache
+.mypy_cache/
+
+# Local artifacts
+*.log
+
+# Ignore libs kept in felis/libs (not part of stdlib)
+felis/libs/
+
+# Ignore all examples except the canonical hello example
+examples/*
+!examples/hello/
+!examples/hello/**

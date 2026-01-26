@@ -1,0 +1,21 @@
+library LoggingUtils
+
+export log, warn, error, clear_logs, _output
+
+list _output = []
+
+define log(msg: string) {
+    add join("[INFO] ", msg) to _output
+}
+
+define warn(msg: string) {
+    add join("[WARN] ", msg) to _output
+}
+
+define error(msg: string) {
+    add join("[ERROR] ", msg) to _output
+}
+
+define clear_logs() {
+    delete all from _output
+}

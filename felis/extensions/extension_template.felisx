@@ -1,0 +1,25 @@
+{
+  "id": "your.extension.id",
+  "name": "Your Extension Name",
+  "description": "Short description of what this extension provides",
+  "version": "0.1.0",
+  "extensionUrl": "https://example.com/your-extension.js",
+  "scratchUrl": "https://example.com/your-extension.js",
+  "blocks": [
+    {
+      "felisName": "example_command",
+      "blockSpec": "do example %n",
+      "type": "command",
+      "argTypes": ["number"]
+    },
+    {
+      "felisName": "example_reporter",
+      "blockSpec": "get value %n",
+      "type": "reporter",
+      "argTypes": ["number"]
+    }
+  ],
+  "metadata": {
+    "notes": "Replace fields with your extension's values. Host your extension JS on a stable URL (CDN or extensions.turbowarp.org) and update `extensionUrl`/`scratchUrl`."
+  }
+}

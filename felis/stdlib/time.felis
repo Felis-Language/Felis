@@ -1,0 +1,44 @@
+library TimeUtils
+
+export wait_ms, get_timestamp, timer_reset, current_year, current_month, current_date, current_day_of_week, current_hour, current_minute, current_second, _return
+
+define wait_ms(ms: number) {
+    wait ms / 1000 secs
+}
+
+define get_timestamp() {
+    # Returns seconds since 2000
+    return dayssince2000 * 86400
+}
+
+define timer_reset() {
+    reset timer
+}
+
+define current_year() {
+    return current_year
+}
+
+define current_month() {
+    return current_month
+}
+
+define current_date() {
+    return current_date
+}
+
+define current_day_of_week() {
+    return current_day_of_week
+}
+
+define current_hour() {
+    return current_hour
+}
+
+define current_minute() {
+    return current_minute
+}
+
+define current_second() {
+    return current_second
+}

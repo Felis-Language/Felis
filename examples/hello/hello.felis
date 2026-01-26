@@ -1,0 +1,49 @@
+import "math"
+import "pen"
+
+sprite Engine {
+
+    # ======================
+    # CONFIG
+    # ======================
+    var fov = 120
+    var cam_dist = 4
+    var scale = 60
+
+    var rx = 0
+    var ry = 0
+    ```felis
+    # Basic Felis test file used as the canonical example / test.
+    import "math"
+    import "pen"
+
+    sprite Demo {
+      var count = 0
+
+      define add_and_return(a: number, b: number) {
+        return a + b
+      }
+
+      on flag {
+        erase_all()
+        set_pen_color("#ff8800")
+        set_pen_size(2)
+
+        say("Starting Felis test")
+
+        repeat 5 {
+          change count by 1
+          var s = add_and_return(count, 2)
+          pen_up()
+          goto(s * 20, count * 20)
+          pen_down()
+          say("count=" + count)
+          wait(0.2)
+        }
+
+        say("Done")
+      }
+    }
+
+    ```
+    # ======================
